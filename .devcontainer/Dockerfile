@@ -9,6 +9,9 @@ ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
 # ===== APT 使用清华大学镜像 =====
 COPY sources.list /etc/apt/sources.list
 
+# ===== 防止证书问题下载node安装脚本不成功，可使用本地的 =====
+COPY node_setup_22.x.sh /tmp/node_setup_22.x.sh
+
 # ===== 安装系统依赖 =====
 RUN apt-get update && apt-get install -y \
     curl \
@@ -32,6 +35,12 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs 
     # && rm -rf /var/lib/apt/lists/*
+
+RUN command -v npm >/dev/null || { \
+    chmod +x /tmp/node_setup_22.x.sh; \
+    /tmp/node_setup_22.x.sh; \
+    apt-get install -y nodejs; \
+}
 
 # ===== NPM 镜像 =====
 RUN npm config set registry https://registry.npmmirror.com
