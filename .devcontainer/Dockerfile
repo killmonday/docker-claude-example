@@ -68,14 +68,16 @@ RUN python3 -m pip install --upgrade wheel setuptools
 RUN go env -w GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,direct
 RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 
-# ===== 非 root 用户 =====
-ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
+# ===== 配置非root用户 =====
+# 在mac上没问题，在win上不行，先注释
+# ARG USERNAME=vscode
+# ARG USER_UID=1000
+# ARG USER_GID=$USER_UID
 
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && chown -R $USERNAME:$USERNAME /go /opt/venv
+# RUN groupadd --gid $USER_GID $USERNAME \
+#     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+#     && chown -R $USERNAME:$USERNAME /go /opt/venv
 
-USER $USERNAME
+# USER $USERNAME
+
 RUN mkdir ~/.claude-code-router/

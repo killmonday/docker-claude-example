@@ -1,0 +1,39 @@
+{
+  "LOG": true,
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "OPENAI_API_KEY": "",
+  "OPENAI_BASE_URL": "",
+  "OPENAI_MODEL": "",
+  "Providers": [
+    {
+      "name": "tencent",
+      "api_base_url": "https://api.lkeap.cloud.tencent.com/plan/v3/chat/completions",
+      "api_key": "<KEY>",
+      "models": [
+        "glm-5",
+        "tc-code-latest",
+        "hunyuan-2.0-instruct",
+        "hunyuan-2.0-thinking",
+        "minimax-m2.5",
+        "kimi-k2.5",
+        "hunyuan-t1",
+        "hunyuan-turbos"
+      ]
+    },
+    {
+      "name": "xianyu",
+      "api_base_url": "https://api.xx.xx/v1/chat/completions",
+      "api_key": "<KEY>",
+      "models": [
+        "gpt-5.1-codex"
+      ]
+    }
+  ],
+  "Router": {
+    "default": "xianyu,gpt-5.3-codex",
+    "background": "xianyu,gpt-5.3-codex",
+    "think": "xianyu,gpt-5.3-codex",
+    "longContext": "xianyu,gpt-5.3-codex"
+  }
+}
