@@ -1,0 +1,5 @@
+export CLAUDE_CODE_DANGER_MODE=1
+export CLAUDE_CODE_ALLOW_PERMISSIONS=1
+export CLAUDE_CODE_NO_FLICKER=1
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+export CLAUDE_CODE_NO_FLICKER=1 && ccr code enable-auto-mode --allow-dangerously-skip-permissions
