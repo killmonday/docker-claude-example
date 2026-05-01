@@ -48,7 +48,7 @@ RUN npm config set registry https://registry.npmmirror.com
 # ===== Claude Code =====
 #RUN npm install -g @anthropic-ai/claude-code
 RUN curl -fsSL https://claude.ai/install.sh | bash
-#RUN npm install -g @musistudio/claude-code-router
+RUN npm install -g @musistudio/claude-code-router
 
 # Python 默认版本
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
