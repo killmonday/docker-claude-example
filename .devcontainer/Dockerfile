@@ -48,6 +48,7 @@ RUN npm config set registry https://registry.npmmirror.com
 # ===== Claude Code =====
 #RUN npm install -g @anthropic-ai/claude-code
 RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN ln -s $HOME/.local/bin/claude /usr/local/bin/claude
 RUN npm install -g @musistudio/claude-code-router
 
 # Python 默认版本
