@@ -45,10 +45,7 @@ RUN command -v npm >/dev/null || { \
 # ===== NPM 镜像 =====
 RUN npm config set registry https://registry.npmmirror.com
 
-# ===== Claude Code =====
-#RUN npm install -g @anthropic-ai/claude-code
-RUN curl -fsSL https://claude.ai/install.sh | bash
-RUN ln -s $HOME/.local/bin/claude /usr/local/bin/claude
+
 RUN npm install -g @musistudio/claude-code-router
 
 # Python 默认版本
@@ -81,7 +78,17 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && chown -R $USERNAME:$USERNAME /go /opt/venv
 
-# USER $USERNAME
+USER $USERNAME
+# ===== Claude Code =====
+# RUN npm install -g @anthropic-ai/claude-code
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
+USER root
+RUN ln -s /home/$USERNAME/.local/bin/claude /usr/local/bin/claude
+RUN chmod 775 /usr/local/bin/claude
+RUN chown root:vscode /usr/local/bin/claude
+
+
 # chmod -R vscode:vscode /workspaces
 
 RUN mkdir ~/.claude-code-router/
