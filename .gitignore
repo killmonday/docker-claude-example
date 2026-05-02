@@ -1,3 +1,7 @@
+run_claude.sh
+env_init.sh
+ccr.config.example.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
