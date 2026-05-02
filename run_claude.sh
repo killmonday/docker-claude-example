@@ -1,7 +1,18 @@
+export ANTHROPIC_BASE_URL=https://xx
+export ANTHROPIC_AUTH_TOKEN=sk-xx
+
+export ANTHROPIC_MODEL=gpt-5.4
+export ANTHROPIC_DEFAULT_OPUS_MODEL=gpt-5.4
+export ANTHROPIC_DEFAULT_SONNET_MODEL=gpt-5.4
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=gpt-5.4
+export CLAUDE_CODE_SUBAGENT_MODEL=gpt-5.4
+
 export CLAUDE_CODE_DANGER_MODE=1
 export CLAUDE_CODE_ALLOW_PERMISSIONS=1
 export CLAUDE_CODE_NO_FLICKER=1
 export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 export CLAUDE_CODE_ATTRIBUTION_HEADER=0
-export CLAUDE_CODE_NO_FLICKER=1 && ccr code enable-auto-mode --allow-dangerously-skip-permissions
+
+#  ccr code  --allow-dangerously-skip-permissions
+claude --allow-dangerously-skip-permissions
