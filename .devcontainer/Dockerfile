@@ -78,7 +78,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && chown -R $USERNAME:$USERNAME /go /opt/venv
 
-USER $USERNAME
+#USER $USERNAME
 # ===== Claude Code =====
 # RUN npm install -g @anthropic-ai/claude-code
 RUN curl -fsSL https://claude.ai/install.sh | bash
