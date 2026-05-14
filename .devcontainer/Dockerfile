@@ -11,6 +11,7 @@ COPY sources.list /etc/apt/sources.list
 
 # ===== 防止证书问题下载node安装脚本不成功，可使用本地的 =====
 COPY node_setup_22.x.sh /tmp/node_setup_22.x.sh
+COPY install.sh /tmp/install.sh
 
 # ===== 安装系统依赖 =====
 RUN apt-get update && apt-get install -y \
@@ -81,12 +82,15 @@ RUN groupadd --gid $USER_GID $USERNAME \
 #USER $USERNAME
 # ===== Claude Code =====
 # RUN npm install -g @anthropic-ai/claude-code
-RUN curl -fsSL https://claude.ai/install.sh | bash
+USER $USERNAME
+RUN curl -fsSL https://claude.ai/install.sh | bash 
+RUN echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> ~/.bashrc
 
 USER root
-RUN ln -s /home/$USERNAME/.local/bin/claude /usr/local/bin/claude
-RUN chmod 775 /usr/local/bin/claude
-RUN chown root:vscode /usr/local/bin/claude
+# RUN ln -s /home/$USERNAME/.local/bin/claude /usr/local/bin/claude
+# RUN ln -s /root/.local/bin/claude /usr/local/bin/claude
+# RUN chown root:vscode /usr/local/bin/claude
+# RUN chmod 775 /usr/local/bin/claude
 
 
 # chmod -R vscode:vscode /workspaces

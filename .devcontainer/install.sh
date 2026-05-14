@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 # Parse command line arguments
 TARGET="$1"  # Optional target parameter
