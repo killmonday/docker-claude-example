@@ -395,7 +395,7 @@ Before reporting a project-control-plane task complete, check:
 2. `CHANGELOG.md` records user-visible workflow, documentation, API, or behavior changes.
 3. `docs/项目控制台.md` is synchronized if phase state, active backlog, or blockers changed.
 4. Relevant `docs/backlog/*.md` has no item left `进行中` unless work will continue immediately.
-5. Relevant `docs/modules/*.md` changed only when module behavior, scope, or acceptance changed.
+5. **Relevant `docs/modules/*.md` MUST be updated when module behavior, scope, or acceptance changed.** Search `docs/modules/` and `docs/当前实现总览.md` for mentions of the affected views, URLs, templates, or feature names — if any doc describes the old behavior, it must be brought in sync. Do not skip this check just because "the fix is small." If a documented feature changes, the doc is wrong until updated.
 6. Verification evidence is recorded, or a clear test exemption is stated.
 7. Deslop pass (ai-slop-cleaner) has been run on changed files and post-deslop regression tests pass, or the user explicitly waived this step.
 8. The final report distinguishes current-turn changes from pre-existing dirty worktree changes; do not summarize the whole repository diff as if it was created by this task.
@@ -597,7 +597,7 @@ Mode D-lite requirements:
 4. Implement the minimum fix only.
 5. Run targeted verification and record any pre-existing failures separately from new failures.
 6. Update `CHANGELOG.md` for user-visible behavior changes.
-7. Do not update module docs unless behavior, scope, or acceptance changed beyond the local fix.
+7. If the fix changes behavior of a documented feature (page, API, data flow): grep `docs/modules/` and `docs/当前实现总览.md` for mentions of the affected symbols (view names, URL paths, template files) and update any doc that describes the old behavior. Only skip if no doc mentions the affected feature.
 
 Steps (single item / each item in chain):
 
@@ -633,7 +633,7 @@ Steps (single item / each item in chain):
 12. Update:
     - backlog item status and status record
     - project console if backlog status, active work, or blockers changed
-    - module doc if behavior changed
+    - module doc if behavior changed — **inspect changed symbols (view names, URL paths, template files) and grep `docs/modules/` + `docs/当前实现总览.md` for any doc that references them; update all matches**
     - OpenAPI/database docs if contracts changed
     - Minimal design docs under docs/ if the change introduces new decisions or data flows
     - `CHANGELOG.md`
@@ -840,6 +840,7 @@ Avoid:
 - Reporting full dirty-worktree diffs as if they were current-turn changes.
 - Dismissing test failures as “pre-existing” without command, failing check, evidence, and next step.
 - Silently continuing after actual operations diverge from the previously stated plan or promise; explain the divergence to the user and wait for instruction.
+- Skipping module doc updates because "the change is small" — if a documented feature's behavior changed, the doc is now wrong regardless of patch size. Grep for affected symbols across `docs/modules/` to be sure.
 
 ## Required final response shape
 
