@@ -1,6 +1,6 @@
 ---
 name: project-control-plane
-description: Manage continuous project delivery through a project console, module backlog ledgers, scoped context packages, verification, and state synchronization.
+description: Manage continuous project delivery through a project console, module backlog ledgers, scoped context packages, verification, and state synchronization. Use when reviewing project status, planning next steps, clarifying vague requirements, generating/executing backlog items, auditing recent changes, or running consensus planning for high-risk work.
 triggers:
   - 项目控制台
   - backlog
@@ -68,10 +68,11 @@ Only use "MVP" when the user explicitly asks for it or when referring to existin
 
 1. 读 `docs/项目控制台.md`（不是 `docs/CLAUDE.md`）了解当前阶段和活动 backlog。
 2. 检测用户是否明示持续运行（见下方持续运行检测规则）。若已激活持续运行，直接进入 Mode D-Chain。
-3. 判断用户请求属于哪个 Mode（A-H）。
-4. 如果请求涉及新功能且没有对应 backlog item：进入 Mode B0（需求澄清）或 Mode B（backlog 生成）。
-5. 如果已有 backlog item 且属高风险：进入 Mode H。高风险定义：P0 +（跨模块 | DB 迁移 | 安全认证 | >20 文件 | API 破坏性变更）。
-6. 如果已有 backlog item 且为标准风险：进入 Mode D。
+3. 判断用户请求属于哪个 Mode（A-H 或 R）。
+4. 如果用户明确要求“只检查/只审查/只出报告/不要改代码”，优先进入 Mode R（只读审计）。
+5. 如果请求涉及新功能且没有对应 backlog item：进入 Mode B0（需求澄清）或 Mode B（backlog 生成）。
+6. 如果已有 backlog item 且属高风险：进入 Mode H。高风险定义：P0 +（跨模块 | DB 迁移 | 安全认证 | >20 文件 | API 破坏性变更）。
+7. 如果已有 backlog item 且为标准风险：进入 Mode D。
 
 ## 持续运行（Mode D-Chain）
 
@@ -119,6 +120,8 @@ Use this skill when the user asks to:
 - Synchronize development state after work.
 - Prepare a phase acceptance check.
 - Reduce document sprawl and context overload.
+- Audit recent changes against plans / backlog / module docs without directly implementing fixes.
+- Check whether recent work has omissions, regressions, stale tests, or stale docs.
 
 ## When not to use
 
@@ -138,6 +141,7 @@ Trivial means only typo fixes, local wording changes, or obvious one-line mechan
 ```text
 docs/
   项目控制台.md
+  设计总览.md
   需求规格说明书初稿.md
   阶段交付范围说明.md
   当前实现总览.md
@@ -145,39 +149,29 @@ docs/
 
   modules/
     00-模块总览.md
-    01-Product管理模块.md
-    02-PoC管理模块.md
-    03-关系匹配与审核模块.md
-    04-AI别名识别模块.md
-    05-异步任务模块.md
-    06-运行部署与可观测性模块.md
+    ...
 
   backlog/
-    00-Backlog维护规则.md
-    01-Product管理.md
-    02-PoC管理.md
-    03-关系匹配与审核.md
-    04-AI别名识别.md
-    05-异步任务.md
-    06-运行部署与可观测性.md
+    ...
 
 plans/
   <date>-<backlog-id>-<task-name>.md
 ```
 
-If some files do not exist, do not assume they must all be created immediately. Ask whether to initialize missing control-plane files or proceed with existing documents.
+**`docs/设计总览.md`**：项目架构入口文档。覆盖技术栈选型、模块地图与模块间关系、核心业务流（分步描述 + 关键代码文件指针）、关键设计决策记录（每次做出影响架构或流程的决策时，第一时间更新此文档）。
 
 ## Artifact responsibilities
 
 | Artifact | Responsibility | Update frequency |
 |----------|----------------|------------------|
 | `docs/项目控制台.md` | Current phase, active backlog, blockers, next recommendation | When backlog status, active work, or blockers change |
+| `docs/设计总览.md` | Architecture overview: tech stack, module map & relations, core business flows, key design decisions | Every time a design decision is made that affects architecture or flow |
 | `docs/backlog/*.md` | Source of truth for backlog item status | High |
 | `docs/modules/*.md` | Module requirements, high-level design, flows, acceptance | Medium |
 | `plans/*.md` | Per-task execution record | Every non-trivial task |
 | `docs/当前实现总览.md` | Current code capability map | Medium |
 | `docs/开发文档索引.md` | Navigation | Low/medium |
-| `CHANGELOG.md` | User-visible changes | Every meaningful change |
+| `CHANGELOG.md` | All changes, dated | Every change（每次改动都记，必须带 `## YYYY-MM-DD` 日期标题） |
 
 ## Module and backlog numbering
 
@@ -392,15 +386,64 @@ This is not a hard gate with force/bypass syntax. It is a control-plane internal
 Before reporting a project-control-plane task complete, check:
 
 1. Relevant `plans/*.md` has result, risk, and next-step sections updated.
-2. `CHANGELOG.md` records user-visible workflow, documentation, API, or behavior changes.
+2. `CHANGELOG.md` records this change（每次改动都记，必须带 `## YYYY-MM-DD` 日期标题；如当天日期标题不存在则先创建）。
 3. `docs/项目控制台.md` is synchronized if phase state, active backlog, or blockers changed.
 4. Relevant `docs/backlog/*.md` has no item left `进行中` unless work will continue immediately.
-5. **Relevant `docs/modules/*.md` MUST be updated when module behavior, scope, or acceptance changed.** Search `docs/modules/` and `docs/当前实现总览.md` for mentions of the affected views, URLs, templates, or feature names — if any doc describes the old behavior, it must be brought in sync. Do not skip this check just because "the fix is small." If a documented feature changes, the doc is wrong until updated.
-6. Verification evidence is recorded, or a clear test exemption is stated.
-7. Deslop pass (ai-slop-cleaner) has been run on changed files and post-deslop regression tests pass, or the user explicitly waived this step.
-8. The final report distinguishes current-turn changes from pre-existing dirty worktree changes; do not summarize the whole repository diff as if it was created by this task.
-9. Any failing verification command records: exact command, failing test/check, failure summary, whether evidence indicates it is pre-existing or caused by this task, and the recommended next step.
-10. If actual operations diverged from a stated plan or promise, explain the divergence to the user and wait for instruction（向用户说明并等待指示）instead of silently continuing or self-approving the change.
+5. `docs/设计总览.md` is updated if a new design decision was made（技术选型、流程变更、模块关系、架构边界）.
+6. **Relevant `docs/modules/*.md` MUST be updated when module behavior, scope, or acceptance changed.** 编码前已按必答清单更新，此处为验证。
+7. Verification evidence is recorded, or a clear test exemption is stated.
+8. Deslop pass (ai-slop-cleaner) has been run on changed files and post-deslop regression tests pass, or the user explicitly waived this step.
+9. The final report distinguishes current-turn changes from pre-existing dirty worktree changes; do not summarize the whole repository diff as if it was created by this task.
+10. The final report distinguishes three categories whenever relevant: (a) issues fixed in this turn, (b) older issues exposed while working on this turn, and (c) unrelated historical issues that remain outside the scope.
+11. Any failing verification command records: exact command, failing test/check, failure summary, whether evidence indicates it is pre-existing or caused by this task, and the recommended next step.
+12. If actual operations diverged from a stated plan or promise, explain the divergence to the user and wait for instruction（向用户说明并等待指示）instead of silently continuing or self-approving the change.
+
+## Documentation sync matrix
+
+- **Any code change** → update `CHANGELOG.md`（一行即可，不做判断；必须带日期：`## YYYY-MM-DD`）
+- **Design decision made** → update `docs/设计总览.md`
+- **Module behavior / scope / flow change** → update the relevant `docs/modules/*.md`
+- **Acceptance criteria / implementation state change** → update the relevant `docs/backlog/*.md`
+- **Read-only audit report** → write to `plans/*.md` or a dedicated report file; do not update module docs unless the audit itself changes documented truth
+- **Test-only fix** → default to backlog/plan updates only; do not force a module doc edit unless runtime behavior or documented acceptance changed
+
+## Mode R: Recent-change audit (read-only)
+
+Use when the user asks to:
+
+- 检查最近几天的提交有没有问题
+- 按设计/plan/backlog 核对最近实现
+- 排查遗漏功能、回归 bug、测试滞后、文档残留
+- 只出报告，不直接修改代码
+
+Steps:
+
+1. Confirm the audit scope: recent N days, selected modules, selected plans, and whether current dirty worktree changes are included.
+2. Load only the minimum context package: `docs/项目控制台.md`, related `plans/*.md`, related `docs/backlog/*.md`, related `docs/modules/*.md`, recent changed files, and relevant tests.
+3. Audit code, tests, docs, and stated scope for consistency.
+4. Classify every finding into exactly one of:
+   - 已确认代码问题
+   - 测试滞后 / 测试夹具过期
+   - 文档与代码不一致
+   - 风险点但证据不足
+5. For each finding, include:
+   - 等级（高 / 中 / 低）
+   - 分类
+   - 位置（file:line or artifact section）
+   - 现象
+   - 影响场景
+   - 建议
+6. Clearly distinguish:
+   - 已提交改动中的问题
+   - 当前未提交工作区问题
+7. Produce a read-only report and stop. Do not implement unless the user explicitly asks to continue.
+8. If the user later asks to continue, convert the audit findings into a repair queue before entering Mode D or Mode D-lite.
+
+Success criteria:
+
+- The report clearly separates code bugs, stale tests, stale docs, and low-confidence risks.
+- The report distinguishes committed changes from dirty-worktree-only findings.
+- The report is directly usable as a repair queue.
 
 ## Mode A: Project status review
 
@@ -426,7 +469,7 @@ Steps:
    - current state
    - top 1-3 risks
    - recommended next action
-6. Do not implement unless the user explicitly asks.
+6. 🛑 STOP — Do not implement unless the user explicitly asks.
 
 Success criteria:
 
@@ -481,7 +524,7 @@ Steps:
    - Boundary: Could a reader distinguish in-scope from out-of-scope?
    - Assumptions: Are implicit dependencies (APIs, tables, services) listed?
    Revise based on agent feedback (max 2 review-revise iterations).
-8. Ask the user to confirm priorities before treating as committed. Then transition to Mode B to formalize into the backlog file.
+8. 🔴 CHECKPOINT — Ask the user to confirm priorities before treating as committed. Then transition to Mode B to formalize into the backlog file.
 
 Round limit:
 
@@ -517,7 +560,7 @@ Steps:
    - Dependency completeness: Are all predecessors (migrations, modules, APIs) listed?
    - Priority consistency: Would P0 items truly block the phase if skipped?
    Revise based on agent feedback (max 2 review-revise iterations).
-8. Ask the user to confirm priorities before treating them as committed.
+8. 🔴 CHECKPOINT — Ask the user to confirm priorities before treating them as committed.
 
 Rules:
 
@@ -553,7 +596,7 @@ Steps:
    - Phase acceptance testability: Can each phase-level acceptance criterion be verified objectively?
    - Excluded scope justification: Are excluded items clearly non-blocking for this phase?
    Revise based on feedback (max 2 iterations).
-9. Ask user to confirm before implementation.
+9. 🔴 CHECKPOINT — Ask user to confirm before implementation.
 
 Output should include:
 
@@ -574,6 +617,28 @@ Success criteria:
 - Acceptance is testable.
 - No vague item is included without a clarification plan.
 
+## 编码前必答清单
+
+进入 Mode D 或 Mode D-lite 实现之前，逐项确认。此清单优先于所有实现步骤——**未答完不写代码**。
+
+```
+1. 这个改动会让哪个已有文档描述变成错的？
+   → 搜索 docs/modules/、docs/当前实现总览.md、docs/设计总览.md
+   → 找到受影响的文档 → 先更新它们
+
+2. 这个改动涉及新的设计决策吗？（技术选型、流程变更、边界约定、架构关系）
+   → 先更新 docs/设计总览.md 或 docs/modules/*.md
+
+3. 这个改动需要被未来的人追溯原因吗？
+   → 创建 backlog item
+   → 例外：纯 typo、空格调整、颜色值微调，且不改变任何 API/行为/数据/文档描述
+
+4. CHANGELOG 记录了吗？（含日期）
+   → 每条记录必须挂在 `## YYYY-MM-DD` 日期标题下
+   → 如果当天日期标题还不存在，先创建日期标题
+   → 每次改动都记，一行即可，不做判断
+```
+
 ## Mode D: Execute backlog item(s)
 
 Use when the user explicitly asks to execute a specific backlog item, or when in Mode D-Chain (continuous execution).
@@ -592,12 +657,12 @@ Use Mode D-lite only when ALL conditions hold:
 Mode D-lite requirements:
 
 1. Read `docs/项目控制台.md` and the directly related source/test files.
-2. Create or update a compact `plans/<date>-<task>.md` with problem, chosen fix, risks, and verification.
-3. If no backlog item exists, either create a small backlog item or record why this is a Mode D-lite exception in the plan.
-4. Implement the minimum fix only.
-5. Run targeted verification and record any pre-existing failures separately from new failures.
-6. Update `CHANGELOG.md` for user-visible behavior changes.
-7. If the fix changes behavior of a documented feature (page, API, data flow): grep `docs/modules/` and `docs/当前实现总览.md` for mentions of the affected symbols (view names, URL paths, template files) and update any doc that describes the old behavior. Only skip if no doc mentions the affected feature.
+2. **先过编码前必答清单**（见上方）。
+3. Create or update a compact `plans/<date>-<task>.md` with problem, chosen fix, risks, and verification.
+4. 必须创建 backlog item。唯一例外：改动纯属 typo/空格/颜色值调整，且不改变任何 API/行为/数据/文档描述。不得以"改动很小"为由跳过。
+5. Implement the minimum fix only.
+6. Run targeted verification and record any pre-existing failures separately from new failures.
+7. Update `CHANGELOG.md`（每次改动都记，一行即可）。
 
 Steps (single item / each item in chain):
 
@@ -610,7 +675,7 @@ Steps (single item / each item in chain):
    - **Constraint Clarity**: Are boundaries, non-goals, and dependencies explicit? Is it clear what NOT to change?
    - **Criteria Clarity**: Is every acceptance criterion testable? Can you point to a specific file/test/behavior that would prove it?
    - **Context Clarity**: Do you understand the relevant existing code well enough to modify it safely? Have you read the callers, callees, and shared types of the target area?
-6. If any dimension is unclear AND not in chain mode: produce a "待确认问题清单" and ask the user before coding. If in chain mode with unclear dimensions, record the ambiguity as a risk and proceed.
+6. 🔴 CHECKPOINT — If any dimension is unclear AND not in chain mode: produce a "待确认问题清单" and ask the user before coding. If in chain mode with unclear dimensions, record the ambiguity as a risk and proceed.
 7. **Risk classification**: Classify the item:
    - **High-risk**: P0 priority, cross-module, security/auth, data migration, >20 files expected, public API breakage. If in chain mode and user has not explicitly said "自己处理高风险项": stop the chain and report. If user has authorized autonomous high-risk handling, proceed.
    - **Standard**: Everything else. → Proceed to step 8.
@@ -646,6 +711,7 @@ Steps (single item / each item in chain):
     - 需要额外依赖但 backlog 未声明（如新 package、新 MCP 服务、外部 API）
     - 验收条件覆盖不到的实现细节（如错误处理语义、事务边界）
     链模式下不停止，但累积的意外发现会在链完成后触发一次轻量回溯：列出所有意外发现，建议用户对受影响的 backlog item 走 Mode B0 澄清或直接更新 backlog。
+16. **Repair-queue handoff**：如果当前工作是从 Mode R 审计进入实现，开始编码前先把 findings 归并成修复队列（P0: 功能正确性 / 数据正确性；P1: 测试与文档一致性；P2: 清理项），并在最终汇报中说明本轮修了哪些、暴露了哪些旧问题、哪些仍留待后续处理。
 
 Success criteria:
 
@@ -732,7 +798,7 @@ Steps:
    - 待外部依赖
    - 待验证
 5. Identify candidate next-stage themes from gaps, blockers, and user goals.
-6. Ask the human to choose the next-stage target before generating committed backlog.
+6. 🔴 CHECKPOINT — Ask the human to choose the next-stage target before generating committed backlog.
 7. After confirmation, draft the next batch of numbered module backlog items.
 8. Update project console only after the next-stage target or active backlog changes.
 
@@ -779,7 +845,7 @@ Steps:
 5. **Re-review loop** (max 5 iterations):
    - Any non-APPROVE Critic verdict → collect feedback → revise plan → Architect → Critic → repeat
    - If 5 iterations reached without APPROVE, present the best version to the user with remaining risks
-6. **On consensus approval**: Proceed to Mode D (execution) with the verified plan. The plan file in `plans/` becomes the execution guide.
+6. 🔴 CHECKPOINT — **On consensus approval**: Proceed to Mode D (execution) with the verified plan. The plan file in `plans/` becomes the execution guide.
 7. **On persistent rejection**: Report the unresolved issues to the user and ask whether to proceed anyway, revise the backlog item scope, or defer.
 
 Architect and Critic steps MUST run sequentially (await Architect before launching Critic).
@@ -831,16 +897,31 @@ Avoid:
 - Executing high-risk items without technical consensus when cross-module impact is uncertain.
 - Skipping deslop pass after implementation (cleanup is part of done).
 - Treating reviewer approval as the final step — deslop and regression must follow in the same turn.
-- Calling EnterPlanMode instead of Mode H for consensus planning.
-- Using oh-my-claudecode:planner agent as a shortcut for Mode H's full Planner → Architect → Critic loop.
-- Writing code immediately after plan approval without first creating a backlog item and syncing docs per Mode D step 12.
-- Treating `/project-control-plane` behavior changes as trivial edits just because the patch is small.
-- Continuing directly from a “先聊聊” discussion into code without re-entering Mode D or Mode D-lite after user approval.
-- Modifying Meilisearch settings, database migration state, service config, queues, or other runtime external state without explicit user authorization.
+- 违反上方「硬禁止」任意一条（7 条硬禁止已单独列出，此处不重复）。
 - Reporting full dirty-worktree diffs as if they were current-turn changes.
 - Dismissing test failures as “pre-existing” without command, failing check, evidence, and next step.
 - Silently continuing after actual operations diverge from the previously stated plan or promise; explain the divergence to the user and wait for instruction.
 - Skipping module doc updates because "the change is small" — if a documented feature's behavior changed, the doc is now wrong regardless of patch size. Grep for affected symbols across `docs/modules/` to be sure.
+- 跳过编码前必答清单直接写代码——"改动很小"不是豁免理由。清单必须在编码前逐项答完。
+- CHANGELOG 漏记或缺少日期——所有改动都记，必须挂 `## YYYY-MM-DD` 日期标题下，没日期就无法追溯。
+- 做设计决策时不更新 `docs/设计总览.md`——设计文档的第一落点是决策发生时，不是事后补充。
+
+## 异常恢复表
+
+每个 Mode 关键步骤的失败处理：触发条件 → 一线修复 → 仍失败兜底。
+
+| 触发条件 | 一线修复 | 仍失败兜底 |
+|---------|---------|-----------|
+| `docs/项目控制台.md` 不存在 | 检查是否首次使用本技能，若是则创建最小控制台文件（含阶段名、backlog 索引、活跃项、阻塞项） | 询问用户项目当前阶段和优先级，手动引导进入 Mode B 创建初始 backlog |
+| 目标 backlog item 的 scope/验收条件为空 | 检查关联 module doc 是否有足够信息补全；若 module doc 也无信息 → 标记为模糊，建议 Mode B0 | 将该项标记 `进行中`（风险），记录"范围待澄清"，向用户报告后继续下一个 item |
+| Context package 加载后仍不足判断 | 列出缺失的具体信息（如"不知道 API 响应格式"、"不知道 DB 表结构"），逐项 grep 补充 | 🛑 STOP，向用户列出信息缺口清单，等用户补充后再继续 |
+| Mode D 四层验证中 reviewer 拒绝 | 读 reviewer 反馈 → 逐条修复 → 重新验证 → 再次提交 reviewer（最多 3 轮） | 3 轮仍未通过：记录 reviewer 拒绝理由到 plan 文件，标记 backlog 为 `进行中`（阻塞：待技术方案），汇报用户 |
+| Mode D 四层验证中 deslop 引入回归 | git diff 查看 deslop 变更 → 逐条回滚有问题的清理 → 重新跑测试 | 回滚整个 deslop commit，记录"deslop 跳过（引入回归）"，继续 |
+| Mode D-Chain 中服务崩溃（PostgreSQL/Redis/uvicorn 等） | `pg_isready` / `redis-cli ping` 检查 → 自动重启对应服务 | 重启失败：🛑 STOP 链，输出已完成 item 清单 + 崩溃服务名 + 修复命令建议 |
+| Mode H 共识循环 5 轮未 APPROVE | 收集最终版 plan + Architect/Critic 最后反馈 → 展示给用户 | 🛑 STOP，让用户决定：接受当前方案 / 缩小 backlog scope / 延期 |
+| Mode B/B0 critic review 不通过 | 读 critic 反馈 → 逐条修订 → 重新提交（最多 2 轮） | 2 轮仍未通过：保留 unresolved 项在 backlog 中显式标注，汇报用户后按用户决定继续 |
+| `git` 操作失败（如 worktree 脏、冲突） | `git stash` → 重试 | 仍失败：手动备份当前改动到 `/tmp/`，告知用户后继续 |
+| 编码前必答清单中某条无法确定 | grep 搜索受影响的文档/符号 → 列出受影响的文档清单 | 不确定是否受影响时默认标记为"需更新"，实现后按 Mode D step 12 验证 |
 
 ## Required final response shape
 
@@ -850,6 +931,17 @@ For project status or planning:
 - 当前判断：
 - 推荐下一步：
 - 需要你确认：
+```
+
+For recent-change audit (Mode R) completion:
+
+```text
+- 审计范围：
+- 已确认代码问题：
+- 测试滞后/夹具过期：
+- 文档与代码不一致：
+- 风险点但证据不足：
+- 建议下一步：
 ```
 
 For demand clarification (Mode B0) completion:
